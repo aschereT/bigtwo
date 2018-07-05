@@ -1,9 +1,9 @@
 package main
 
 import (
-	"time"
-	"math/rand"
 	"fmt"
+	"math/rand"
+	"time"
 )
 
 var CardNames = map[int]string{
@@ -23,35 +23,36 @@ var CardNames = map[int]string{
 }
 
 type Player struct {
-	ID int
+	ID   int
 	Deck []int
 }
 
 type GameState struct {
-	Players [4]Player
-	Discard []int
+	Players   [4]Player
+	Discard   []int
+	CurPlayer int
 }
 
 func NewGameState() GameState {
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
-	
+
 	gs := GameState{Players: [4]Player{Player{ID: 0}, Player{ID: 1}, Player{ID: 2}, Player{ID: 3}}}
 
 	for i := 0; i < 52; i++ {
 		for {
 			k := r1.Intn(4)
-			if len(gs.Players[k].Deck) < 13{
+			if len(gs.Players[k].Deck) < 13 {
 				gs.Players[k].Deck = append(gs.Players[k].Deck, i)
 				break
 			}
-		
+		}
 	}
 	return gs
 }
 
 func (gs *GameState) Print() {
-	fmt.Println("Discarded cards:")
+	fmt.Println("Last played cards:")
 	for _, k := range gs.Discard {
 		fmt.Print(CardNames[k], "(", k, ")", ", ")
 	}
@@ -62,6 +63,25 @@ func (gs *GameState) Print() {
 		}
 		fmt.Println("")
 	}
+}
+
+func (gs *GameState) getCurPlayer() int {
+	return gs.CurPlayer
+}
+
+func (gs *GameState) getNextPlayer() int {
+	return (gs.CurPlayer + 1) % 4
+}
+
+func (gs *GameState) play(player int, play []int) {
+	//check if player's turn
+	//check if player has all cards
+	//check if play is valid
+	//check if bigger than last played
+	//remove old discard
+	//move from player hand to discard
+	//check if player wins (0 cards in hand)
+	//change to next player
 }
 
 func main() {
