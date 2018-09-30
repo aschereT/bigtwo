@@ -73,15 +73,30 @@ func (gs *GameState) getNextPlayer() int {
 	return (gs.CurPlayer + 1) % 4
 }
 
-func (gs *GameState) play(player int, play []int) {
+func (gs *GameState) play(player int, play []int) int {
 	//check if player's turn
+	if gs.CurPlayer != player {
+		return 1
+	}
+	//check all cards are unique
+	for i := 0; i < len(play); i++ {
+		for j := i + 1; i < len(play); j++ {
+			if i == j {
+				return 2
+			}
+		}
+	}
 	//check if player has all cards
+	// for card := range gs.Players[player].Deck {
+
+	// }
 	//check if play is valid
 	//check if bigger than last played
 	//remove old discard
 	//move from player hand to discard
 	//check if player wins (0 cards in hand)
 	//change to next player
+	return 0
 }
 
 func main() {
