@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"math/rand"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -92,7 +96,7 @@ func (gs *GameState) play(player int, play []int) int {
 	for i := 0; i < len(play); i++ {
 		for j := i + 1; j < len(play); j++ {
 			//check all cards are unique
-			if i == j {
+			if play[i] == play[j] {
 				return 2
 			}
 		}
@@ -107,6 +111,7 @@ func (gs *GameState) play(player int, play []int) int {
 	//move from player hand to discard
 	//check if player wins (0 cards in hand)
 	//change to next player
+	gs.CurPlayer = gs.getNextPlayer()
 	return 0
 }
 
@@ -118,30 +123,28 @@ func main() {
 	DebugPlay(gs)
 }
 
-//https://stackoverflow.com/questions/15413469/how-to-make-fmt-scanln-read-into-a-slice-of-integers
-func intScanln(n int) ([]int, error) {
-	x := make([]int, n)
-	y := make([]interface{}, len(x))
-	for i := range x {
-		y[i] = &x[i]
+//https://stackoverflow.com/questions/43599253/read-space-separated-integers-from-stdin-into-int-slice?rq=1
+func readHand() []int {
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	var n []int
+	for _, f := range strings.Fields(scanner.Text()) {
+		i, err := strconv.Atoi(f)
+		if err == nil {
+			n = append(n, i)
+		}
 	}
-	n, err := fmt.Scanln(y...)
-	x = x[:n]
-	return x, err
+	return n
 }
 
 func DebugPlay(gs GameState) {
 	for {
 		fmt.Println("Currently turn of player", gs.getCurPlayer())
-		fmt.Println("Which cards to play? Enter values for cards, space separated")
 
-		cardsPlayed, err := intScanln(5)
-		for err != nil {
-			fmt.Println("Can't read that, try again. Error:", err)
-			cardsPlayed, err = intScanln(5)
-			//os.Exit(1)
-		}
+		fmt.Println("Which cards to play? Enter values for cards, space separated")
+		cardsPlayed := readHand()
 		fmt.Println("Cards played:", cardsPlayed)
+
 		playErr := gs.play(gs.getCurPlayer(), cardsPlayed)
 		fmt.Println("Results:", playErr, PlayErrors[playErr])
 	}
