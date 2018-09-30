@@ -22,6 +22,10 @@ var CardNames = map[int]string{
 	48: "2 Diamonds", 49: "2 Clubs", 50: "2 Hearts", 51: "2 Spades",
 }
 
+var PlayErrors = map[int]string{
+	0: "Successful", 1: "Not this player's turn", 2: "A card is played twice", 3: "You don't have this card",
+}
+
 type Player struct {
 	ID   int
 	Deck []int
@@ -34,6 +38,7 @@ type GameState struct {
 }
 
 func NewGameState() GameState {
+	fmt.Println("Main:NewGameState: New game")
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 
@@ -78,19 +83,25 @@ func (gs *GameState) play(player int, play []int) int {
 	if gs.CurPlayer != player {
 		return 1
 	}
-	//check all cards are unique
+	//check if player passes
+	if len(play) == 0 {
+
+	}
+	//check if 3 other players passes
+
 	for i := 0; i < len(play); i++ {
-		for j := i + 1; i < len(play); j++ {
+		for j := i + 1; j < len(play); j++ {
+			//check all cards are unique
 			if i == j {
 				return 2
 			}
 		}
 	}
-	//check if player has all cards
+	//check if player has this card on hand
 	// for card := range gs.Players[player].Deck {
 
 	// }
-	//check if play is valid
+	//Checks to see if play is valid:
 	//check if bigger than last played
 	//remove old discard
 	//move from player hand to discard
@@ -104,4 +115,34 @@ func main() {
 	gs := NewGameState()
 	fmt.Println("Sample gamestate:", gs)
 	gs.Print()
+	DebugPlay(gs)
+}
+
+//https://stackoverflow.com/questions/15413469/how-to-make-fmt-scanln-read-into-a-slice-of-integers
+func intScanln(n int) ([]int, error) {
+	x := make([]int, n)
+	y := make([]interface{}, len(x))
+	for i := range x {
+		y[i] = &x[i]
+	}
+	n, err := fmt.Scanln(y...)
+	x = x[:n]
+	return x, err
+}
+
+func DebugPlay(gs GameState) {
+	for {
+		fmt.Println("Currently turn of player", gs.getCurPlayer())
+		fmt.Println("Which cards to play? Enter values for cards, space separated")
+
+		cardsPlayed, err := intScanln(5)
+		for err != nil {
+			fmt.Println("Can't read that, try again. Error:", err)
+			cardsPlayed, err = intScanln(5)
+			//os.Exit(1)
+		}
+		fmt.Println("Cards played:", cardsPlayed)
+		playErr := gs.play(gs.getCurPlayer(), cardsPlayed)
+		fmt.Println("Results:", playErr, PlayErrors[playErr])
+	}
 }
