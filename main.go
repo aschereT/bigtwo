@@ -101,8 +101,19 @@ func (gs *GameState) play(player int, play []int) int {
 			}
 		}
 	}
+
 	//check if player has this card on hand
-	// for card := range gs.Players[player].Deck {
+	var validcard = 0
+	for card := range gs.Players[player].Deck{
+		for i := 0; i < len(play); i++ {
+			if play[i] == card {
+				validcard++
+			}
+		} 
+	}
+	if (validcard != len(play))
+		return 3
+
 
 	// }
 	//Checks to see if play is valid:
@@ -148,4 +159,3 @@ func DebugPlay(gs GameState) {
 		playErr := gs.play(gs.getCurPlayer(), cardsPlayed)
 		fmt.Println("Results:", playErr, PlayErrors[playErr])
 	}
-}
