@@ -27,18 +27,18 @@ var CardNames = map[int]string{
 }
 
 var PlayErrors = map[int]string{
-	0: "Successful", 1: "Not this player's turn", 2: "A card is played twice", 3: "You don't have this card",
+	0: "Successful", 1: "Not this player's turn", 2: "A card is played twice", 3: "You don't have this card", 7: "Winner!",
 }
 
 type Player struct {
 	ID   int
-	Deck []int
+	deck []int
 }
 
 type GameState struct {
-	Players   [4]Player
-	Discard   []int
-	CurPlayer int
+	players   [4]Player
+	discard   []int
+	curPlayer int
 }
 
 func NewGameState() GameState {
@@ -46,13 +46,13 @@ func NewGameState() GameState {
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 
-	gs := GameState{Players: [4]Player{Player{ID: 0}, Player{ID: 1}, Player{ID: 2}, Player{ID: 3}}}
+	gs := GameState{players: [4]Player{Player{ID: 0}, Player{ID: 1}, Player{ID: 2}, Player{ID: 3}}}
 
 	for i := 0; i < 52; i++ {
 		for {
 			k := r1.Intn(4)
-			if len(gs.Players[k].Deck) < 13 {
-				gs.Players[k].Deck = append(gs.Players[k].Deck, i)
+			if len(gs.players[k].deck) < 13 {
+				gs.players[k].deck = append(gs.players[k].deck, i)
 				break
 			}
 		}
@@ -62,12 +62,13 @@ func NewGameState() GameState {
 
 func (gs *GameState) Print() {
 	fmt.Println("Last played cards:")
-	for _, k := range gs.Discard {
+	for _, k := range gs.discard {
 		fmt.Print(CardNames[k], "(", k, ")", ", ")
 	}
+	fmt.Print("\n")
 	for i := 0; i < 4; i++ {
-		fmt.Println("Player", i, "cards", len(gs.Players[i].Deck), ":")
-		for _, k := range gs.Players[i].Deck {
+		fmt.Println("Player", i, "cards", len(gs.players[i].deck), ":")
+		for _, k := range gs.players[i].deck {
 			fmt.Print(CardNames[k], "(", k, ")", ", ")
 		}
 		fmt.Println("")
@@ -75,20 +76,24 @@ func (gs *GameState) Print() {
 }
 
 func (gs *GameState) getCurPlayer() int {
-	return gs.CurPlayer
+	return gs.curPlayer
 }
 
 func (gs *GameState) getNextPlayer() int {
-	return (gs.CurPlayer + 1) % 4
+	return (gs.curPlayer + 1) % 4
 }
 
 func (gs *GameState) play(player int, play []int) int {
 	//check if player's turn
-	if gs.CurPlayer != player {
+	if gs.curPlayer != player {
 		return 1
 	}
 	//check if player passes
 	if len(play) == 0 {
+
+	}
+	//check player is not playing too many cards
+	if len(play) > 5 {
 
 	}
 	//check if 3 other players passes
@@ -104,33 +109,74 @@ func (gs *GameState) play(player int, play []int) int {
 
 	//check if player has this card on hand
 	var validcard = 0
-	for card := range gs.Players[player].Deck{
+	for card := range gs.players[player].deck {
 		for i := 0; i < len(play); i++ {
 			if play[i] == card {
 				validcard++
 			}
-		} 
+		}
 	}
-	if (validcard != len(play))
+	if validcard != len(play) {
 		return 3
-
-
-	// }
+	}
 	//Checks to see if play is valid:
-	//check if bigger than last played
-	//remove old discard
+	//check if bigger than last player
+
+	//remove old discard, and
 	//move from player hand to discard
+	gs.discard = play
+	gs.players[player].removeCards(play)
+
 	//check if player wins (0 cards in hand)
+	if (len(gs.players[player].deck)) == 0 {
+		//WEINER WEINER CHEAPER DINERS
+		return 7
+	}
 	//change to next player
-	gs.CurPlayer = gs.getNextPlayer()
+	gs.curPlayer = gs.getNextPlayer()
 	return 0
+}
+
+//remove a card from a player's hands
+func (pl *Player) removeCard(card int) int {
+	found := 0
+	newDeck := []int{}
+	for n := range pl.deck {
+		if n != card {
+			newDeck = append(newDeck, n)
+		} else {
+			found = 1
+		}
+	}
+	pl.deck = newDeck
+	return found
+}
+
+//remove a set of cards from player's hands
+func (pl *Player) removeCards(cards []int) int {
+	found := 0
+	newDeck := []int{}
+	for n := range pl.deck {
+		fd := true
+		for k := range cards {
+			if n == k {
+				found++
+				fd = false
+				break
+			}
+		}
+		if fd {
+			newDeck = append(newDeck, n)
+		}
+	}
+	pl.deck = newDeck
+	return found
 }
 
 func main() {
 	fmt.Println("Big2 Game started")
 	gs := NewGameState()
-	fmt.Println("Sample gamestate:", gs)
-	gs.Print()
+	//gs.Print()
 	DebugPlay(gs)
 }
 
@@ -150,6 +196,7 @@ func readHand() []int {
 
 func DebugPlay(gs GameState) {
 	for {
+		gs.Print()
 		fmt.Println("Currently turn of player", gs.getCurPlayer())
 
 		fmt.Println("Which cards to play? Enter values for cards, space separated")
@@ -159,3 +206,4 @@ func DebugPlay(gs GameState) {
 		playErr := gs.play(gs.getCurPlayer(), cardsPlayed)
 		fmt.Println("Results:", playErr, PlayErrors[playErr])
 	}
+}
