@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sort"
 )
 
 var CardNames = map[int]string{
@@ -83,9 +84,83 @@ func (gs *GameState) getNextPlayer() int {
 	return (gs.curPlayer + 1) % 4
 }
 
+
 //given a set of cards, calculate value, suit, and combo
 func calcVal(play []int) (combo int, value int, suit int) {
 
+combo = 0	//assume invalid combo to begin with
+
+//reorder cards from smallest to largest
+sortedPlay := sort.Ints(play)
+
+var cardVal []int
+for i := 0; i < len(play); i++ {
+	cardVal = append(cardVal, sortedPlay[i]/4 + 3)
+}
+
+var cardSuit []int
+for i := 0; i < len(play); i++ {
+	cardSuit = append(cardSuit, sortedPlay[i]%4)
+}
+
+//singles
+if(len(play)==1){
+	value = cardVal[0]
+	combo = 1
+}
+
+//doubles
+if(len(play) == 2){
+	if cardVal[0] == cardVal[1]{
+		value = cardVal[0] 
+		combo = 2
+	}
+}
+
+//triples
+if len(play) == 3 {
+	if cardVal[0] == cardVal[1]{
+		if cardVal[1] == cardVal[2]{
+			value = cardVal[0] 
+			combo = 3
+		}
+	}
+}
+
+if len(play) == 5 {
+	//straight
+	if (cardVal[4] - cardVal[3] == 1) {
+		if (cardVal[3] - cardVal[2] == 1) {
+			if (cardVal[2] - cardVal[1] == 1) {
+				if (cardVal[1] - cardVal[0] == 1) {
+					combo = 4
+				}
+			}
+		}
+	}
+
+	//full house
+	threeOfAKind := 0
+	threeOfAKind_index := [len(play)]int
+	for i := 1; i < len(play); i++ {
+		if (cardVal[i] == cardVal[i-1]) {
+			threeOfAKind++
+			threeOfAKind_index[i-1] = 1
+			threeOfAKind_index[i] = 1
+		} else {
+			threeOfAKind_index[i] = 0
+		}
+	}
+	// check if remaining two cards are the same - depends on the card values being sorted
+	if threeOfAKind == 3 {
+		for i := 0; i < len(play)-1; i++ {
+			if threeOfAKind_index[i] != 1 {
+				if cardVal[i] == cardVal[i+1] {
+					combo = 5 //full house valid
+				}
+			}
+		}
+	}
 }
 
 func (gs *GameState) play(player int, play []int) int {
