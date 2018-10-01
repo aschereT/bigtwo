@@ -112,29 +112,24 @@ func calcVal(play []int) (combo int, value int, suit int) {
 	//singles
 	if len(play) == 1 {
 		value = cardVal[0]
-		combo = 1
+		return 1, cardVal[0], cardSuit[0]
 	}
 
 	//doubles
 	if len(play) == 2 {
 		if cardVal[0] == cardVal[1] {
-			value = cardVal[1]
-			combo = 2
+			return 2, cardVal[0], cardSuit[1]
 		}
 	}
 
 	//triples
 	if len(play) == 3 {
-		if cardVal[0] == cardVal[1] {
-			if cardVal[1] == cardVal[2] {
-				value = cardVal[2]
-				combo = 3
-			}
+		if cardVal[0] == cardVal[1] && cardVal[1] == cardVal[2] {
+			return 3, cardVal[2], cardSuit[2]
 		}
 	}
 
 	if len(play) == 5 {
-
 		//straight
 		straight := false
 		for i := 1; i < len(play); i++ {
@@ -197,9 +192,8 @@ func calcVal(play []int) (combo int, value int, suit int) {
 		}
 
 		value = cardVal[4]
-		return
 	}
-	return 0, 0, 0
+	return combo, value, cardSuit[4]
 }
 
 func (gs *GameState) play(player int, play []int) int {
