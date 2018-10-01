@@ -86,6 +86,8 @@ func (gs *GameState) getNextPlayer() int {
 
 
 //given a set of cards, calculate value, suit, and combo
+//compare cards based on combo and value
+//value = highest card in a play - sort cards from lowest to highest and return value of last card
 func calcVal(play []int) (combo int, value int, suit int) {
 
 combo = 0	//assume invalid combo to begin with
@@ -112,7 +114,7 @@ if(len(play)==1){
 //doubles
 if(len(play) == 2){
 	if cardVal[0] == cardVal[1]{
-		value = cardVal[0] 
+		value = cardVal[1] 
 		combo = 2
 	}
 }
@@ -121,25 +123,34 @@ if(len(play) == 2){
 if len(play) == 3 {
 	if cardVal[0] == cardVal[1]{
 		if cardVal[1] == cardVal[2]{
-			value = cardVal[0] 
+			value = cardVal[2] 
 			combo = 3
 		}
 	}
 }
 
 if len(play) == 5 {
+
 	//straight
 	straight := false
 	for i := 1; i < len(play); i++ {
 		if(cardVal[i] - cardVal[i-1] != 1) {
 			straight = true
+			combo = 4
 		}
 	}
-	if straight {
-		combo = 4
+
+	//flush
+	flush := false
+	for i := 1; i < len(play); i++ {
+		if(cardSuit[i] == cardSuit[i-1]) {
+			flush = true
+			combo = 5
+		}
 	}
 
 	//full house
+	fullHouse := false
 	threeOfAKind := 0
 	threeOfAKind_index := [len(play)]int
 	for i := 1; i < len(play); i++ {
@@ -156,32 +167,33 @@ if len(play) == 5 {
 		for i := 0; i < len(play)-1; i++ {
 			if threeOfAKind_index[i] != 1 {
 				if cardVal[i] == cardVal[i+1] {
-					combo = 5 //full house valid
+					fullHouse = true //full house valid
+					combo = 6
 				}
 			}
 		}
 	}
 
-	//flush
-	//straight
-	flush := false
+	//four of a kind
+	fourOfAKind := false
+	countFour := 0
 	for i := 1; i < len(play); i++ {
 		if(cardSuit[i] == cardSuit[i-1]) {
-			flush = true
+			countFour++
 		}
 	}
-	if flush {
-		combo = 6
+	if countFour == 4 {
+		fourOfAKind = true
+		combo = 7
 	}
 
-	//check all royals
-	royal := true
-	for i := 1; i < len(play); i++ {
-		if(cardSuit[i] < 10) {
-			royal = false
-		}
+	//straight flush
+	if (straight && flush) {
+		combo = 8
 	}
 
+	value = cardVal[4]
+	return
 }
 
 func (gs *GameState) play(player int, play []int) int {
@@ -308,5 +320,12 @@ func DebugPlay(gs GameState) {
 
 		playErr := gs.play(gs.getCurPlayer(), cardsPlayed)
 		fmt.Println("Results:", playErr, PlayErrors[playErr])
+
+		playVal := calcVal(cardsPlayed)
+		if playVal[0] == 0 {
+			fmt.Println("Not a valid play") 
+		} else {
+			fmt.Println("Play: %d, Value of highest card in play: %d")
+		}
 	}
 }
