@@ -27,6 +27,16 @@ var CardNames = map[int]string{
 	48: "2 Diamonds", 49: "2 Clubs", 50: "2 Hearts", 51: "2 Spades",
 }
 
+//3-10, 11 = Jack, 12 = Queen, 13 = King, 14 = Ace, 15 = 2
+func getCardValue(c int) int {
+	return (c / 4) + 3
+}
+
+//0 = Diamonds, 1 = Clubs, 2 = Hearts, 3 = Spades
+func getCardSuit(c int) int {
+	return c % 4
+}
+
 var PlayErrors = map[int]string{
 	0: "Successful", 1: "Not this player's turn", 2: "A card is played twice", 3: "You don't have this card", 7: "Winner!",
 }
@@ -172,6 +182,9 @@ func calcVal(play []int) (combo int, value int, suit int) {
 				}
 			}
 		}
+		if fullHouse {
+			combo = 6
+		}
 
 		//four of a kind
 		fourOfAKind := false
@@ -183,6 +196,9 @@ func calcVal(play []int) (combo int, value int, suit int) {
 		}
 		if countFour == 4 {
 			fourOfAKind = true
+			combo = 7
+		}
+		if fourOfAKind {
 			combo = 7
 		}
 
@@ -290,11 +306,13 @@ func (pl *Player) removeCards(cards []int) int {
 
 func main() {
 	fmt.Println("Big2 Game started")
-	//gs := NewGameState()
+	gs := NewGameState()
+	DebugPlay(gs)
+
 	//gs.Print()
-	StartServer()
+	//StartServer()
 	select {}
-	//DebugPlay(gs)
+
 }
 
 //https://stackoverflow.com/questions/43599253/read-space-separated-integers-from-stdin-into-int-slice?rq=1
@@ -323,11 +341,11 @@ func DebugPlay(gs GameState) {
 		playErr := gs.play(gs.getCurPlayer(), cardsPlayed)
 		fmt.Println("Results:", playErr, PlayErrors[playErr])
 
-		playVal := calcVal(cardsPlayed)
-		if playVal[0] == 0 {
+		playCombo, playVal, playSuit := calcVal(cardsPlayed)
+		if playVal == 0 {
 			fmt.Println("Not a valid play")
 		} else {
-			fmt.Println("Play: %d, Value of highest card in play: %d")
+			fmt.Println("Play: Combo", playCombo, "Value ", playVal, "Suit", playSuit)
 		}
 	}
 }
