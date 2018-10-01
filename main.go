@@ -129,14 +129,14 @@ if len(play) == 3 {
 
 if len(play) == 5 {
 	//straight
-	if (cardVal[4] - cardVal[3] == 1) {
-		if (cardVal[3] - cardVal[2] == 1) {
-			if (cardVal[2] - cardVal[1] == 1) {
-				if (cardVal[1] - cardVal[0] == 1) {
-					combo = 4
-				}
-			}
+	straight := false
+	for i := 1; i < len(play); i++ {
+		if(cardVal[i] - cardVal[i-1] != 1) {
+			straight = true
 		}
+	}
+	if straight {
+		combo = 4
 	}
 
 	//full house
@@ -161,6 +161,27 @@ if len(play) == 5 {
 			}
 		}
 	}
+
+	//flush
+	//straight
+	flush := false
+	for i := 1; i < len(play); i++ {
+		if(cardSuit[i] == cardSuit[i-1]) {
+			flush = true
+		}
+	}
+	if flush {
+		combo = 6
+	}
+
+	//check all royals
+	royal := true
+	for i := 1; i < len(play); i++ {
+		if(cardSuit[i] < 10) {
+			royal = false
+		}
+	}
+
 }
 
 func (gs *GameState) play(player int, play []int) int {
