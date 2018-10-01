@@ -83,6 +83,11 @@ func (gs *GameState) getNextPlayer() int {
 	return (gs.curPlayer + 1) % 4
 }
 
+//given a set of cards, calculate value, suit, and combo
+func calcVal(play []int) (combo int, value int, suit int) {
+
+}
+
 func (gs *GameState) play(player int, play []int) int {
 	//check if player's turn
 	if gs.curPlayer != player {
@@ -90,7 +95,9 @@ func (gs *GameState) play(player int, play []int) int {
 	}
 	//check if player passes
 	if len(play) == 0 {
-
+		//change to next player
+		gs.curPlayer = gs.getNextPlayer()
+		return 0
 	}
 	//check player is not playing too many cards
 	if len(play) > 5 {
