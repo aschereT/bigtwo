@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
-	"sort"
 )
 
 var CardNames = map[int]string{
@@ -32,14 +32,16 @@ var PlayErrors = map[int]string{
 }
 
 type Player struct {
-	ID   int
-	deck []int
+	ID   int   `json:"ID,omitempty"`
+	deck []int `json:"deck,omitempty"`
 }
 
 type GameState struct {
-	players   [4]Player
-	discard   []int
-	curPlayer int
+	GameId    int       `json:"gameid,omitempty`
+	players   [4]Player `json:"players,omitempty`
+	discard   []int     `json:"discard,omitempty"`
+	curPlayer int       `json:"curPlayer,omitempty"`
+	finished  bool      `json:"finished,omitempty"`
 }
 
 func NewGameState() GameState {
@@ -76,6 +78,10 @@ func (gs *GameState) Print() {
 	}
 }
 
+func (gs *GameState) getGameState() string {
+	return fmt.Sprint(gs)
+}
+
 func (gs *GameState) getCurPlayer() int {
 	return gs.curPlayer
 }
@@ -84,116 +90,116 @@ func (gs *GameState) getNextPlayer() int {
 	return (gs.curPlayer + 1) % 4
 }
 
-
 //given a set of cards, calculate value, suit, and combo
 //compare cards based on combo and value
 //value = highest card in a play - sort cards from lowest to highest and return value of last card
 func calcVal(play []int) (combo int, value int, suit int) {
+	combo = 0 //assume invalid combo to begin with
 
-combo = 0	//assume invalid combo to begin with
+	//reorder cards from smallest to largest
+	sort.Ints(play)
 
-//reorder cards from smallest to largest
-sortedPlay := sort.Ints(play)
-
-var cardVal []int
-for i := 0; i < len(play); i++ {
-	cardVal = append(cardVal, sortedPlay[i]/4 + 3)
-}
-
-var cardSuit []int
-for i := 0; i < len(play); i++ {
-	cardSuit = append(cardSuit, sortedPlay[i]%4)
-}
-
-//singles
-if(len(play)==1){
-	value = cardVal[0]
-	combo = 1
-}
-
-//doubles
-if(len(play) == 2){
-	if cardVal[0] == cardVal[1]{
-		value = cardVal[1] 
-		combo = 2
+	var cardVal []int
+	for i := 0; i < len(play); i++ {
+		cardVal = append(cardVal, play[i]/4+3)
 	}
-}
 
-//triples
-if len(play) == 3 {
-	if cardVal[0] == cardVal[1]{
-		if cardVal[1] == cardVal[2]{
-			value = cardVal[2] 
-			combo = 3
-		}
+	var cardSuit []int
+	for i := 0; i < len(play); i++ {
+		cardSuit = append(cardSuit, play[i]%4)
 	}
-}
 
-if len(play) == 5 {
+	//singles
+	if len(play) == 1 {
+		value = cardVal[0]
+		combo = 1
+	}
 
-	//straight
-	straight := false
-	for i := 1; i < len(play); i++ {
-		if(cardVal[i] - cardVal[i-1] != 1) {
-			straight = true
-			combo = 4
+	//doubles
+	if len(play) == 2 {
+		if cardVal[0] == cardVal[1] {
+			value = cardVal[1]
+			combo = 2
 		}
 	}
 
-	//flush
-	flush := false
-	for i := 1; i < len(play); i++ {
-		if(cardSuit[i] == cardSuit[i-1]) {
-			flush = true
-			combo = 5
-		}
-	}
-
-	//full house
-	fullHouse := false
-	threeOfAKind := 0
-	threeOfAKind_index := [len(play)]int
-	for i := 1; i < len(play); i++ {
-		if (cardVal[i] == cardVal[i-1]) {
-			threeOfAKind++
-			threeOfAKind_index[i-1] = 1
-			threeOfAKind_index[i] = 1
-		} else {
-			threeOfAKind_index[i] = 0
-		}
-	}
-	// check if remaining two cards are the same - depends on the card values being sorted
-	if threeOfAKind == 3 {
-		for i := 0; i < len(play)-1; i++ {
-			if threeOfAKind_index[i] != 1 {
-				if cardVal[i] == cardVal[i+1] {
-					fullHouse = true //full house valid
-					combo = 6
-				}
+	//triples
+	if len(play) == 3 {
+		if cardVal[0] == cardVal[1] {
+			if cardVal[1] == cardVal[2] {
+				value = cardVal[2]
+				combo = 3
 			}
 		}
 	}
 
-	//four of a kind
-	fourOfAKind := false
-	countFour := 0
-	for i := 1; i < len(play); i++ {
-		if(cardSuit[i] == cardSuit[i-1]) {
-			countFour++
+	if len(play) == 5 {
+
+		//straight
+		straight := false
+		for i := 1; i < len(play); i++ {
+			if cardVal[i]-cardVal[i-1] != 1 {
+				straight = true
+				combo = 4
+			}
 		}
-	}
-	if countFour == 4 {
-		fourOfAKind = true
-		combo = 7
-	}
 
-	//straight flush
-	if (straight && flush) {
-		combo = 8
-	}
+		//flush
+		flush := false
+		for i := 1; i < len(play); i++ {
+			if cardSuit[i] == cardSuit[i-1] {
+				flush = true
+				combo = 5
+			}
+		}
 
-	value = cardVal[4]
-	return
+		//full house
+		fullHouse := false
+		threeOfAKind := 0
+		threeOfAKind_index := make([]int, len(play))
+		for i := 1; i < len(play); i++ {
+			if cardVal[i] == cardVal[i-1] {
+				threeOfAKind++
+				threeOfAKind_index[i-1] = 1
+				threeOfAKind_index[i] = 1
+			} else {
+				threeOfAKind_index[i] = 0
+			}
+		}
+		// check if remaining two cards are the same - depends on the card values being sorted
+		if threeOfAKind == 3 {
+			for i := 0; i < len(play)-1; i++ {
+				if threeOfAKind_index[i] != 1 {
+					if cardVal[i] == cardVal[i+1] {
+						fullHouse = true //full house valid
+						combo = 6
+					}
+				}
+			}
+		}
+
+		//four of a kind
+		fourOfAKind := false
+		countFour := 0
+		for i := 1; i < len(play); i++ {
+			if cardSuit[i] == cardSuit[i-1] {
+				countFour++
+			}
+		}
+		if countFour == 4 {
+			fourOfAKind = true
+			combo = 7
+		}
+
+		//straight flush
+		if straight && flush {
+			combo = 8
+		}
+
+		value = cardVal[4]
+		return
+	}
+	return 0, 0, 0
 }
 
 func (gs *GameState) play(player int, play []int) int {
@@ -256,7 +262,7 @@ func (gs *GameState) play(player int, play []int) int {
 func (pl *Player) removeCard(card int) int {
 	found := 0
 	newDeck := []int{}
-	for n := range pl.deck {
+	for _, n := range pl.deck {
 		if n != card {
 			newDeck = append(newDeck, n)
 		} else {
@@ -271,9 +277,9 @@ func (pl *Player) removeCard(card int) int {
 func (pl *Player) removeCards(cards []int) int {
 	found := 0
 	newDeck := []int{}
-	for n := range pl.deck {
+	for _, n := range pl.deck {
 		fd := true
-		for k := range cards {
+		for _, k := range cards {
 			if n == k {
 				found++
 				fd = false
@@ -290,9 +296,11 @@ func (pl *Player) removeCards(cards []int) int {
 
 func main() {
 	fmt.Println("Big2 Game started")
-	gs := NewGameState()
+	//gs := NewGameState()
 	//gs.Print()
-	DebugPlay(gs)
+	StartServer()
+	select {}
+	//DebugPlay(gs)
 }
 
 //https://stackoverflow.com/questions/43599253/read-space-separated-integers-from-stdin-into-int-slice?rq=1
@@ -323,7 +331,7 @@ func DebugPlay(gs GameState) {
 
 		playVal := calcVal(cardsPlayed)
 		if playVal[0] == 0 {
-			fmt.Println("Not a valid play") 
+			fmt.Println("Not a valid play")
 		} else {
 			fmt.Println("Play: %d, Value of highest card in play: %d")
 		}
