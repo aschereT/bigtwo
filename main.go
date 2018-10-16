@@ -103,29 +103,39 @@ func (gs *GameState) getNextPlayer() int {
 //given a set of cards, calculate value, suit, and combo
 //compare cards based on combo and value
 //value = highest card in a play - sort cards from lowest to highest and return value of last card
+//combos:
+//0 = invalid
+//1 = singles
+//2 = pair
+//3 = three of a kind
+//4 = straight
+//5 = flush
+//6 = full house
+//7 = four of a kind
+//8 = straight flush
+//9 = royal flush
 func calcVal(play []int) (combo int, value int, suit int) {
 	combo = 0 //assume invalid combo to begin with
 
 	//reorder cards from smallest to largest
 	sort.Ints(play)
 
-	var cardVal []int
+	cardVal := make([]int, len(play))
 	for i := 0; i < len(play); i++ {
-		cardVal = append(cardVal, play[i]/4+3)
+		cardVal[i] = play[i]/4 + 3
 	}
 
-	var cardSuit []int
+	cardSuit := make([]int, len(play))
 	for i := 0; i < len(play); i++ {
-		cardSuit = append(cardSuit, play[i]%4)
+		cardSuit[i] = play[i] % 4
 	}
 
 	//singles
 	if len(play) == 1 {
-		value = cardVal[0]
 		return 1, cardVal[0], cardSuit[0]
 	}
 
-	//doubles
+	//pair
 	if len(play) == 2 {
 		if cardVal[0] == cardVal[1] {
 			return 2, cardVal[0], cardSuit[1]
@@ -158,33 +168,54 @@ func calcVal(play []int) (combo int, value int, suit int) {
 			}
 		}
 
+		//full house(refactored)
+		if cardVal[0] == cardVal[1] && cardVal[1] == cardVal[2] {
+			//first 3
+			if cardVal[3] == cardVal[4] {
+				return 6, cardVal[2], cardSuit[2]
+
+			}
+		} else if cardVal[1] == cardVal[2] && cardVal[2] == cardVal[3] {
+			//this case is probably impossible;
+			//needs proof
+			if cardVal[0] == cardVal[4] {
+				return 6, cardVal[2], cardSuit[3]
+			}
+
+		} else if cardVal[2] == cardVal[3] && cardVal[3] == cardVal[4] {
+			//last 3
+			if cardVal[0] == cardVal[1] {
+				return 6, cardVal[2], cardSuit[4]
+			}
+		}
+
 		//full house
-		fullHouse := false
-		threeOfAKind := 0
-		threeOfAKind_index := make([]int, len(play))
-		for i := 1; i < len(play); i++ {
-			if cardVal[i] == cardVal[i-1] {
-				threeOfAKind++
-				threeOfAKind_index[i-1] = 1
-				threeOfAKind_index[i] = 1
-			} else {
-				threeOfAKind_index[i] = 0
-			}
-		}
-		// check if remaining two cards are the same - depends on the card values being sorted
-		if threeOfAKind == 3 {
-			for i := 0; i < len(play)-1; i++ {
-				if threeOfAKind_index[i] != 1 {
-					if cardVal[i] == cardVal[i+1] {
-						fullHouse = true //full house valid
-						combo = 6
-					}
-				}
-			}
-		}
-		if fullHouse {
-			combo = 6
-		}
+		// fullHouse := false
+		// threeOfAKind := 0
+		// threeOfAKind_index := make([]int, len(play))
+		// for i := 1; i < len(play); i++ {
+		// 	if cardVal[i] == cardVal[i-1] {
+		// 		threeOfAKind++
+		// 		threeOfAKind_index[i-1] = 1
+		// 		threeOfAKind_index[i] = 1
+		// 	} else {
+		// 		threeOfAKind_index[i] = 0
+		// 	}
+		// }
+		// // check if remaining two cards are the same - depends on the card values being sorted
+		// if threeOfAKind == 3 {
+		// 	for i := 0; i < len(play)-1; i++ {
+		// 		if threeOfAKind_index[i] != 1 {
+		// 			if cardVal[i] == cardVal[i+1] {
+		// 				fullHouse = true //full house valid
+		// 				combo = 6
+		// 			}
+		// 		}
+		// 	}
+		// }
+		// if fullHouse {
+		// 	combo = 6
+		// }
 
 		//four of a kind
 		fourOfAKind := false
