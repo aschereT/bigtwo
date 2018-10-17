@@ -116,6 +116,10 @@ func (gs *GameState) getNextPlayer() int {
 //9 = royal flush
 func calcVal(play []int) (combo int, value int, suit int) {
 	combo = 0 //assume invalid combo to begin with
+	if len(play) == 4 {
+		//invalid af, no 4 card plays
+		return 0, 0, 0
+	}
 
 	//reorder cards from smallest to largest
 	sort.Ints(play)
@@ -149,97 +153,96 @@ func calcVal(play []int) (combo int, value int, suit int) {
 		}
 	}
 
-	if len(play) == 5 {
-		//straight
-		straight := false
-		for i := 1; i < len(play); i++ {
-			if cardVal[i]-cardVal[i-1] != 1 {
-				straight = true
-				combo = 4
-			}
+	//straight
+	straight := false
+	for i := 1; i < len(play); i++ {
+		if cardVal[i]-cardVal[i-1] != 1 {
+			straight = true
+			combo = 4
 		}
-
-		//flush
-		flush := false
-		for i := 1; i < len(play); i++ {
-			if cardSuit[i] == cardSuit[i-1] {
-				flush = true
-				combo = 5
-			}
-		}
-
-		//full house(refactored)
-		if cardVal[0] == cardVal[1] && cardVal[1] == cardVal[2] {
-			//first 3
-			if cardVal[3] == cardVal[4] {
-				return 6, cardVal[2], cardSuit[2]
-
-			}
-		} else if cardVal[1] == cardVal[2] && cardVal[2] == cardVal[3] {
-			//this case is probably impossible;
-			//needs proof
-			if cardVal[0] == cardVal[4] {
-				return 6, cardVal[2], cardSuit[3]
-			}
-
-		} else if cardVal[2] == cardVal[3] && cardVal[3] == cardVal[4] {
-			//last 3
-			if cardVal[0] == cardVal[1] {
-				return 6, cardVal[2], cardSuit[4]
-			}
-		}
-
-		//full house
-		// fullHouse := false
-		// threeOfAKind := 0
-		// threeOfAKind_index := make([]int, len(play))
-		// for i := 1; i < len(play); i++ {
-		// 	if cardVal[i] == cardVal[i-1] {
-		// 		threeOfAKind++
-		// 		threeOfAKind_index[i-1] = 1
-		// 		threeOfAKind_index[i] = 1
-		// 	} else {
-		// 		threeOfAKind_index[i] = 0
-		// 	}
-		// }
-		// // check if remaining two cards are the same - depends on the card values being sorted
-		// if threeOfAKind == 3 {
-		// 	for i := 0; i < len(play)-1; i++ {
-		// 		if threeOfAKind_index[i] != 1 {
-		// 			if cardVal[i] == cardVal[i+1] {
-		// 				fullHouse = true //full house valid
-		// 				combo = 6
-		// 			}
-		// 		}
-		// 	}
-		// }
-		// if fullHouse {
-		// 	combo = 6
-		// }
-
-		//four of a kind
-		fourOfAKind := false
-		countFour := 0
-		for i := 1; i < len(play); i++ {
-			if cardSuit[i] == cardSuit[i-1] {
-				countFour++
-			}
-		}
-		if countFour == 4 {
-			fourOfAKind = true
-			combo = 7
-		}
-		if fourOfAKind {
-			combo = 7
-		}
-
-		//straight flush
-		if straight && flush {
-			combo = 8
-		}
-
-		value = cardVal[4]
 	}
+
+	//flush
+	flush := false
+	for i := 1; i < len(play); i++ {
+		if cardSuit[i] == cardSuit[i-1] {
+			flush = true
+			combo = 5
+		}
+	}
+
+	//full house(refactored)
+	if cardVal[0] == cardVal[1] && cardVal[1] == cardVal[2] {
+		//first 3
+		if cardVal[3] == cardVal[4] {
+			return 6, cardVal[2], cardSuit[2]
+
+		}
+	} else if cardVal[1] == cardVal[2] && cardVal[2] == cardVal[3] {
+		//this case is probably impossible;
+		//needs proof
+		if cardVal[0] == cardVal[4] {
+			return 6, cardVal[2], cardSuit[3]
+		}
+
+	} else if cardVal[2] == cardVal[3] && cardVal[3] == cardVal[4] {
+		//last 3
+		if cardVal[0] == cardVal[1] {
+			return 6, cardVal[2], cardSuit[4]
+		}
+	}
+
+	//full house
+	// fullHouse := false
+	// threeOfAKind := 0
+	// threeOfAKind_index := make([]int, len(play))
+	// for i := 1; i < len(play); i++ {
+	// 	if cardVal[i] == cardVal[i-1] {
+	// 		threeOfAKind++
+	// 		threeOfAKind_index[i-1] = 1
+	// 		threeOfAKind_index[i] = 1
+	// 	} else {
+	// 		threeOfAKind_index[i] = 0
+	// 	}
+	// }
+	// // check if remaining two cards are the same - depends on the card values being sorted
+	// if threeOfAKind == 3 {
+	// 	for i := 0; i < len(play)-1; i++ {
+	// 		if threeOfAKind_index[i] != 1 {
+	// 			if cardVal[i] == cardVal[i+1] {
+	// 				fullHouse = true //full house valid
+	// 				combo = 6
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// if fullHouse {
+	// 	combo = 6
+	// }
+
+	//four of a kind
+	fourOfAKind := false
+	countFour := 0
+	for i := 1; i < len(play); i++ {
+		if cardSuit[i] == cardSuit[i-1] {
+			countFour++
+		}
+	}
+	if countFour == 4 {
+		fourOfAKind = true
+		combo = 7
+	}
+	if fourOfAKind {
+		combo = 7
+	}
+
+	//straight flush
+	if straight && flush {
+		combo = 8
+	}
+
+	value = cardVal[4]
+
 	return combo, value, cardSuit[4]
 }
 
